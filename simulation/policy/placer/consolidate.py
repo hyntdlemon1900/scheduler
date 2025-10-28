@@ -2,7 +2,7 @@ class ConsolidatePlacement:
     def __init__(self, vc):
         self.name = "consolidate"
         self.vc = vc
-        self.avail_nodes = self.vc.avail_node_list()
+        self.avail_nodes = self.vc.avail_node_list() #返回可用node（free gpu num > 0）
 
     """
         Enforce consolidate placement
@@ -16,29 +16,29 @@ class ConsolidatePlacement:
         self.avail_nodes = self.vc.avail_node_list()
 
     def consolidateSelect(self, job_gpu_num):
-        self.update_avail_nodes()
+        self.update_avail_nodes() # 是否存在可用GPU
         alloc_nodes = []
-        if job_gpu_num <= 8:
+        if job_gpu_num <= 8: # 优先放在可用GPU最少的节点上，一个节点放不下返回false
             nodes = sorted(self.avail_nodes, key=lambda x: x.free_gpus, reverse=False)
             for node in nodes:
                 if node.free_gpus >= job_gpu_num:
                     alloc_nodes.append((node, job_gpu_num))
                     return True, alloc_nodes
             return False, alloc_nodes
-        else:
-            nodes = sorted(self.avail_nodes, key=lambda x: x.free_gpus, reverse=True)
+        else: # job_gpu_num > 8
+            nodes = sorted(self.avail_nodes, key=lambda x: x.free_gpus, reverse=True) # 可用GPU最多的节点优先
             if job_gpu_num % 8 == 0:
                 node_num = job_gpu_num // 8
                 for node in nodes:
                     if node.free_gpus < 8:
-                        return False, alloc_nodes
+                        return False, alloc_nodes # 中途有节点GPU不满8个，无法整除
 
                     if node.free_gpus == 8 and node_num > 0:
                         alloc_nodes.append((node, 8))
                         node_num -= 1
 
                     if node_num == 0:
-                        return True, alloc_nodes
+                        return True, alloc_nodes # 找到足够节点，每个节点8个GPU
             else:
                 node_num = (job_gpu_num // 8) + 1
                 for node in nodes:
@@ -47,7 +47,7 @@ class ConsolidatePlacement:
                         node_num -= 1
                         continue
 
-                    if node.free_gpus >= (job_gpu_num % 8) and node_num == 1:
+                    if node.free_gpus >= (job_gpu_num % 8) and node_num == 1: #最后不足8个GPU的需求
                         alloc_nodes.append((node, job_gpu_num % 8))
                         node_num -= 1
                         return True, alloc_nodes
@@ -55,7 +55,7 @@ class ConsolidatePlacement:
                     return False, alloc_nodes
 
     def place(self, job):
-        vc_free_gpu_num = self.vc.vc_free_gpus()
+        vc_free_gpu_num = self.vc.vc_free_gpus() # 获取可用GPU数量
         job_gpu_num = job["gpu_num"]
 
         # Total Free GPU Check
@@ -69,7 +69,7 @@ class ConsolidatePlacement:
 
         """ Placement """
         if select_flag:
-            for (node, req_gpu) in alloc_nodes:
+            for (node, req_gpu) in alloc_nodes:   # (node, job_gpu_num)
                 allocate_gpus = node.allocate_gpu(req_gpu, job)
                 job["nodes"].append({node.node_name: allocate_gpus})
             return True

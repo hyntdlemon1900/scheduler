@@ -13,23 +13,68 @@ os.environ["NUMEXPR_MAX_THREADS"] = str(os.cpu_count())
 
 
 def main(args):
+    # #df = pd.read_csv("./data/Venus/cluster_log.csv") #235154
+    # df = pd.read_csv("./data/Venus/cluster_full_log.csv") #114821
+    # df = df[df["gpu_num"] > 0] #114821
+    # from job import Job, Trace
+    # trace = Trace()
+
+    # for _, series in df.iterrows():
+    #     trace.append_job(Job(series))
+    # trace.sort_jobs("submit_time")
+
+    # stats = {
+    # 0: {"gpu_num": [], "duration": [], "to":[]},
+    # 1: {"gpu_num": [], "duration": [], "to":[]},
+    # 2: {"gpu_num": [], "duration": [], "to":[]},
+    # }
+
+    # colo_df = pd.read_csv("analyzer/single_data.csv")
+    # for job in trace.job_list:
+    #     m, b, d, a = job["model"], job["batchsize"], job["dataset"], job["amp"]
+    #     info = colo_df.query(" model == @m and batchsize == @b and dataset == @d and amp == @a") #筛选行
+    #     score = info["label"].values[0]
+    #     if score in stats:
+    #         stats[score]["gpu_num"].append(job["gpu_num"])
+    #         stats[score]["duration"].append(job["duration"])
+    #         stats[score]["to"].append(job["gpu_num"]*job["duration"])
+
+    # for score in [0, 1, 2]:
+    #     gpu_list = stats[score]["gpu_num"]
+    #     dur_list = stats[score]["duration"]
+    #     to_list = stats[score]["duration"]
+        
+    #     if gpu_list and dur_list:
+    #         print(f"Sharescore = {score}")
+    #         print(f"  GPU Num   : min = {min(gpu_list)}, max = {max(gpu_list)}")
+    #         print(f"  Duration  : min = {min(dur_list)}, max = {max(dur_list)}\n")
+    #         print(f"  to  : min = {min(to_list)}, max = {max(to_list)}\n")
+    #     else:
+    #         print(f"Sharescore = {score}: No data found.\n")
+
+
+
+
+
+
+
     code_start = time.perf_counter()
 
     """Logger Setting"""
-    log_dir = f"{args.log_dir}/{args.experiment_name}"
+    log_dir = f"{args.log_dir}/{args.experiment_name}"  # './log/Venus_Sept'
     if not os.path.exists(log_dir):
         os.makedirs(log_dir + "/logfile")
-    logger = utils.logger_init(file=f"{log_dir}/logfile/{args.scheduler}_{args.placer}")
+    logger = utils.logger_init(file=f"{log_dir}/logfile/{args.scheduler}_{args.placer}") # file = './log/Venus_Sept/logfile/lucid_consolidate'
 
     """Infrastructure & Trace Initialization"""
-    vc_df = pd.read_csv(args.trace_dir + "/vc_config.csv", index_col=0)
+    vc_df = pd.read_csv(args.trace_dir + "/vc_config.csv", index_col=0) # './data/Venus/vc_config.csv'
     vc_dict = vc_df.to_dict()["num"]
 
     trace_df, start_ts = utils.get_trace(args.experiment_name, args.trace_dir, read_full=True, idx=args.pollux_idx)
 
     logger.info(f"Total Job Number in Cluster Training: {len(trace_df)}")
 
-    trace = utils.trace_parser(trace_df)
+    trace = utils.trace_parser(trace_df) #为每条trace添加额外参数
 
     if args.scheduler in utils.PROFILER_ENABLED_SCHEDULERS and not args.sweep:
         if args.profiler_auto:
@@ -85,7 +130,7 @@ def main(args):
         for i in range(len(vc_dict)):
             if args.scheduler == "qssf":
                 all_args_list.append(
-                    (trace, CLUSTER.vc_list[i], args.placer, log_dir, args.scheduler, logger, start_ts, estimator)
+                    (trace, CLUSTER.vc_list[i], args.placer, log_dir, args.scheduler, logger, start_ts, estimator)   #！
                 )
             elif args.scheduler == "lucid":
                 all_args_list.append(
@@ -94,9 +139,11 @@ def main(args):
             else:
                 all_args_list.append((trace, CLUSTER.vc_list[i], args.placer, log_dir, args.scheduler, logger, start_ts))
 
-    with multiprocessing.Pool(processes=process_num) as p:
-        results = [p.apply_async(utils.simulate_vc, args_list) for args_list in all_args_list]
-        results = [result.get() for result in results]
+    utils.simulate_vc(*all_args_list[0])
+
+   # with multiprocessing.Pool(processes=process_num) as p:
+   #     results = [p.apply_async(utils.simulate_vc, args_list) for args_list in all_args_list]
+   #     results = [result.get() for result in results]
 
     if args.sweep:
         for policy in utils.get_sweep_schedulers():

@@ -1,0 +1,9 @@
+2025 Oct 14 03:42:05 | MainProcess | Total Job Number in Cluster Training: 23859
+2025 Oct 14 04:24:17 | MainProcess | profvc | Time: 13220000 | Total Job: 23859 | End job: 17 | Running job: 1 | Pending job: 0 | Avail Nodes: 2
+2025 Oct 14 04:24:17 | MainProcess | profvc | Time: 13230000 | Total Job: 23859 | End job: 134 | Running job: 0 | Pending job: 0 | Avail Nodes: 2
+2025 Oct 14 04:24:17 | MainProcess | profvc | Time: 13240000 | Total Job: 23859 | End job: 134 | Running job: 0 | Pending job: 0 | Avail Nodes: 2
+2025 Oct 14 04:24:17 | MainProcess | profvc | Time: 13250000 | Total Job: 23859 | End job: 136 | Running job: 0 | Pending job: 0 | Avail Nodes: 2
+2025 Oct 14 04:24:18 | MainProcess | profvc | Time: 13260000 | Total Job: 23859 | End job: 249 | Running job: 3 | Pending job: 4 | Avail Nodes: 1
+2025 Oct 14 04:24:18 | MainProcess | profvc | Time: 13270000 | Total Job: 23859 | End job: 385 | Running job: 3 | Pending job: 2 | Avail Nodes: 1
+2025 Oct 14 04:24:18 | MainProcess | profvc | Time: 13280000 | Total Job: 23859 | End job: 589 | Running job: 2 | Pending job: 0 | Avail Nodes: 1
+2025 Oct 14 04:24:19 | MainProcess | profvc | Time: 13290000 | Total Job: 23859 | End job: 780 | Running job: 2 | Pending job: 0 | Avail Nodes: 2

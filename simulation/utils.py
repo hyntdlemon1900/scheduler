@@ -68,8 +68,8 @@ def trace_process(dir, date_range, read_full):
         )
     else:
         df = pd.read_csv(
-            dir + "/cluster_full_log.csv",
-            parse_dates=["submit_time"],
+            dir + "/cluster_full_log.csv", # './data/Venus/cluster_full_log.csv'
+            parse_dates=["submit_time"], # 自动将 submit_time 转为时间戳
             usecols=[
                 "job_id",
                 "user",
@@ -93,16 +93,16 @@ def trace_process(dir, date_range, read_full):
     # Consider gpu jobs only
     df = df[df["gpu_num"] > 0]
 
-    # VC filter
+    # VC filter   保留 vc_config.csv 中定义的虚拟集群 ID 所属的job，去除无效/旧集群
     vc_df = pd.read_csv(dir + "/vc_config.csv", index_col=0)
     vc_list = vc_df.index.to_list()
     df = df[df["vc"].isin(vc_list)]
 
-    df.sort_values(by="submit_time", inplace=True)
-    df = df[df["submit_time"] >= pd.Timestamp(start)]
-    df["submit_time"] = df["submit_time"].apply(lambda x: int(datetime.datetime.timestamp(pd.Timestamp(x))))
+    df.sort_values(by="submit_time", inplace=True)  #114821
+    df = df[df["submit_time"] >= pd.Timestamp(start)] # 114749 筛选出大于2020-04-01提交的job
+    df["submit_time"] = df["submit_time"].apply(lambda x: int(datetime.datetime.timestamp(pd.Timestamp(x)))) 
 
-    # Normalizing
+    # Normalizing 以第一个job为时间 0 点
     df["submit_time"] = df["submit_time"] - df.iloc[0]["submit_time"]
 
     df["remain"] = df["duration"]
@@ -110,10 +110,10 @@ def trace_process(dir, date_range, read_full):
     df[["ckpt_times", "queue", "jct"]] = 0
     df["status"] = None
 
-    # Slicing simulation part
+    # Slicing simulation part   所有提交时间在 2020-09-01 到 2020-09-26 的作业
     begin = (pd.Timestamp(date_range[0]) - pd.Timestamp(start)).total_seconds()
     end = (pd.Timestamp(date_range[1]) - pd.Timestamp(start)).total_seconds()
-    df = df[(df["submit_time"] >= begin) & (df["submit_time"] <= end)]
+    df = df[(df["submit_time"] >= begin) & (df["submit_time"] <= end)] # 筛选出2020-09-01 到 2020-09-26的job
 
     df.sort_values(by="submit_time", inplace=True)
     df.reset_index(inplace=True, drop=True)
@@ -310,7 +310,7 @@ def cluster_concatenate(policy, placer, log_dir, dir):
         vc_log = pd.read_csv(f"{log_dir}/{vc}/{prefix}_{vc}_log.csv")
         cluster_log = pd.concat([cluster_log, vc_log])
     cluster_log.sort_values(by="submit_time", inplace=True)
-    cluster_log.to_csv(f"{log_dir}/all/{prefix}_all_log.csv", index=False)
+    cluster_log.to_csv(f"{log_dir}/all/{prefix}_all_log.csv", index=False) # log/Venus_Sept/all/lucid_consolidate_all_log.csv
 
     """Seq"""
     cluster_seq = pd.DataFrame()
@@ -336,7 +336,7 @@ def cluster_concatenate(policy, placer, log_dir, dir):
         cluster_seq["gpu_utilization"] = (
             (cluster_seq["total_gpu_num"] - cluster_seq["idle_gpu_num"]) / cluster_seq["total_gpu_num"]
         ).round(3)
-    cluster_seq.to_csv(f"{log_dir}/all/{prefix}_all_seq.csv", index=False)
+    cluster_seq.to_csv(f"{log_dir}/all/{prefix}_all_seq.csv", index=False)   # log/Venus_Sept/all/lucid_consolidate_all_seq.csv
 
 
 def cluster_analysis(placer, log_dir, dir):
@@ -371,8 +371,8 @@ def cluster_analysis(placer, log_dir, dir):
 
     jct_avg = jct_avg.astype(int)
     que_avg = que_avg.astype(int)
-    jct_avg.to_csv(f"{log_dir}/jct_avg_{placer}.csv")
-    que_avg.to_csv(f"{log_dir}/que_avg_{placer}.csv")
+    jct_avg.to_csv(f"{log_dir}/jct_avg_{placer}.csv") # /root/Lucid/simulation/log/Venus_Sept/jct_avg_consolidate.csv
+    que_avg.to_csv(f"{log_dir}/que_avg_{placer}.csv") # /root/Lucid/simulation/log/Venus_Sept/que_avg_consolidate.csv
 
 
 def get_trace(experiment_name, trace_dir, read_full, idx=None):
@@ -382,7 +382,7 @@ def get_trace(experiment_name, trace_dir, read_full, idx=None):
     elif "Pollux" in experiment_name:
         trace_df, start_ts = trace_pollux_process(trace_dir, idx)
     else:
-        if "Sept" in experiment_name:
+        if "Sept" in experiment_name: # 因为9月的集群资源稳定
             trace_range = ("2020-09-01 00:00:00", "2020-09-26 23:59:00")
             trace_df, start_ts = trace_process(trace_dir, trace_range, read_full)
         elif "July" in experiment_name:
@@ -394,7 +394,7 @@ def get_trace(experiment_name, trace_dir, read_full, idx=None):
     return trace_df, start_ts
 
 
-def profiler_config(experiment_name, vc_dict):
+def profiler_config(experiment_name, vc_dict): # experiment_name = 'Venus_Sept' vc_dict读取字vc_config
     cluster = experiment_name.split("_")[0]
     profile_scale = {"Venus": 2, "Philly": 2}
     profile_time = {"Venus": 200, "Philly": 80}
@@ -408,7 +408,7 @@ def profiler_config(experiment_name, vc_dict):
         vc_dict["vc8Gr"] -= 1
         vc_dict["vcefl"] -= 1
         # vc_dict["vcYVn"] -= 1  # For elastic scaling
-    return vc_dict, scale, time, factor
+    return vc_dict, scale, time, factor  # 手动配置的参数
 
 
 def check_profiler_scale_available(experiment_name, scale, vc_dict, prof_locate_vc=None):

@@ -9,7 +9,7 @@ def train_data_loader(dir, test_date_range):
     # test_date_range refer to the dates used for test, which will be excluded in our train dataset
     start = "2020-04-01 00:00:00"
     df = pd.read_csv(
-        dir + "/cluster_full_log.csv",
+        dir + "/cluster_full_log.csv", # ./data/Venus/cluster_full_log.csv
         parse_dates=["submit_time"],
         usecols=["job_id", "user", "vc", "jobname", "gpu_num", "cpu_num", "submit_time", "duration"],
     )
@@ -38,7 +38,7 @@ def train_data_loader(dir, test_date_range):
     train_df = df[(df["submit_time"] < begin)]
 
     # Filter user, vc not in val data  around 9% jobs be filtered
-    val_users = val_df["user"].unique()
+    val_users = val_df["user"].unique() #返回 "user" 列的所有唯一值（不重复的用户 ID）
 
     val_vcs = val_df["vc"].unique()
 
